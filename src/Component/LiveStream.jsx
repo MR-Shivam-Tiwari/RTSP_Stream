@@ -72,7 +72,7 @@ function LiveStream() {
   const fetchOverlays = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/overlays?videoUrl=${encodeURIComponent(
+        `https://service-portal-backend.vercel.app/api/overlays?videoUrl=${encodeURIComponent(
           videoUrl
         )}`
       );
@@ -121,7 +121,7 @@ function LiveStream() {
   const addTextOverlay = async () => {
     if (newOverlay.content) {
       try {
-        const response = await fetch("http://localhost:5000/api/overlays", {
+        const response = await fetch("https://service-portal-backend.vercel.app/api/overlays", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -150,7 +150,7 @@ function LiveStream() {
   const addLogoOverlay = async () => {
     if (newOverlay.content) {
       try {
-        const response = await fetch("http://localhost:5000/api/overlays", {
+        const response = await fetch("https://service-portal-backend.vercel.app/api/overlays", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -178,7 +178,7 @@ function LiveStream() {
 
   const deleteOverlay = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/overlays/${id}`, {
+      await fetch(`https://service-portal-backend.vercel.app/api/overlays/${id}`, {
         method: "DELETE",
       });
       setOverlays(overlays.filter((overlay) => overlay._id !== id));
@@ -196,7 +196,7 @@ function LiveStream() {
   const updateOverlay = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/overlays/${editingOverlay._id}`,
+        `https://service-portal-backend.vercel.app/api/overlays/${editingOverlay._id}`,
         {
           method: "PUT",
           headers: {
@@ -317,7 +317,7 @@ function LiveStream() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/overlays/${updatedOverlay._id}`,
+        `https://service-portal-backend.vercel.app/api/overlays/${updatedOverlay._id}`,
         {
           method: "PUT",
           headers: {
