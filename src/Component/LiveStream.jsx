@@ -28,6 +28,7 @@ function LiveStream() {
   const fileInputRef = useRef(null);
   const dragItemRef = useRef(null);
   const dragOverlayRef = useRef(null);
+  const [fileSize, setFileSize] = useState(0);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -144,7 +145,7 @@ function LiveStream() {
           type: "",
           content: "",
           position: { x: 50, y: 50 },
-          size: 100,
+          size: 50,
         });
         setIsTextModalOpen(false);
       } catch (error) {
@@ -176,7 +177,7 @@ function LiveStream() {
           type: "",
           content: "",
           position: { x: 50, y: 50 },
-          size: 100,
+          size: 50,
         });
         setIsLogoModalOpen(false);
       } catch (error) {
@@ -234,27 +235,35 @@ function LiveStream() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size
       if (file.size > 100 * 1024) {
         // 100 KB in bytes
         setFileError("File size must be less than 100 KB.");
+        setIsFileValid(false); // Set file validity to false
         return;
       } else {
         setFileError(""); // Clear error if file is valid
+        setIsFileValid(true); // Set file validity to true
       }
 
       try {
         const options = {
-          maxSizeMB: 0.1, // Adjust if necessary; 0.1 MB is 100 KB
+          maxSizeMB: 0.1, // 0.1 MB is 100 KB
           maxWidthOrHeight: 1920,
           useWebWorker: true,
         };
+
+        // Compress the image file
         const compressedFile = await imageCompression(file, options);
+
+        // Read the compressed file as a Data URL
         const reader = new FileReader();
         reader.onload = (e) => {
+          // Update the overlay state with the compressed image data
           setNewOverlay({
             ...newOverlay,
-            content: e.target.result,
-            type: "logo",
+            content: e.target.result, // This is the Data URL of the image
+            type: "logo", // Set type to logo
           });
         };
         reader.readAsDataURL(compressedFile);
@@ -500,48 +509,6 @@ function LiveStream() {
           </div>
           <div className="p-2 grid gap-4">
             <div
-              onClick={() => setIsTextModalOpen(true)}
-              className="rounded-lg border cursor-pointer bg-gray-200 text-gray-700 shadow-sm"
-            >
-              <div className="p-1 flex items-center gap-2">
-                <div className="bg-gray-300 rounded-md w-9 h-9 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-6 h-6 text-gray-600"
-                  >
-                    <path d="M17 6.1H3"></path>
-                    <path d="M21 12.1H3"></path>
-                    <path d="M15.1 18H3"></path>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-center">
-                    Add Text Overlay
-                  </div>
-                </div>
-                <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="26"
-                    height="26"
-                    fill="currentColor"
-                    class="bi bi-plus-circle-dotted"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div
               onClick={() => setIsLogoModalOpen(true)}
               className="rounded-lg border cursor-pointer bg-gray-200 text-gray-700 shadow-sm"
             >
@@ -574,6 +541,48 @@ function LiveStream() {
                 <div className="flex-1">
                   <div className="font-medium text-center">
                     Add Image or Logo
+                  </div>
+                </div>
+                <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26"
+                    height="26"
+                    fill="currentColor"
+                    class="bi bi-plus-circle-dotted"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div
+              onClick={() => setIsTextModalOpen(true)}
+              className="rounded-lg border cursor-pointer bg-gray-200 text-gray-700 shadow-sm"
+            >
+              <div className="p-1 flex items-center gap-2">
+                <div className="bg-gray-300 rounded-md w-9 h-9 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6 text-gray-600"
+                  >
+                    <path d="M17 6.1H3"></path>
+                    <path d="M21 12.1H3"></path>
+                    <path d="M15.1 18H3"></path>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-center">
+                    Add Text Overlay
                   </div>
                 </div>
                 <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8">
@@ -645,6 +654,61 @@ function LiveStream() {
           </div>
         </div>
       </div>
+      {isLogoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg">
+            <h2 className="text-xl font-bold mb-4">Add Logo Overlay</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Upload Logo
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="mt-1 block w-full"
+                onChange={handleFileUpload}
+                ref={fileInputRef}
+              />
+              {fileError && (
+                <p className="text-red-500 text-sm mt-1">{fileError}</p>
+              )}
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Size
+              </label>
+              <input
+                type="range"
+                min="10" // Minimum size
+                max="100" // Maximum size
+                value={newOverlay.size}
+                onChange={(e) =>
+                  setNewOverlay({ ...newOverlay, size: e.target.value })
+                }
+                className="mt-1 block w-full"
+              />
+              <span>{newOverlay.size}%</span>
+            </div>
+            <div className="flex justify-end">
+              <button
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2 ${
+                  !isFileValid && "opacity-50 cursor-not-allowed"
+                }`}
+                onClick={addLogoOverlay}
+                disabled={!isFileValid} // Disable button if file is not valid
+              >
+                Add
+              </button>
+              <button
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                onClick={() => setIsLogoModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isTextModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -697,60 +761,6 @@ function LiveStream() {
           </div>
         </div>
       )}
-
-{isLogoModalOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div className="bg-white p-6 rounded-lg">
-      <h2 className="text-xl font-bold mb-4">Add Logo Overlay</h2>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Upload Logo
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          className="mt-1 block w-full"
-          onChange={handleFileUpload}
-          ref={fileInputRef}
-        />
-        {fileError && (
-          <p className="text-red-500 text-sm mt-1">{fileError}</p>
-        )}
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Size
-        </label>
-        <input
-          type="range"
-          min="10"  // Minimum size
-          max="100" // Maximum size
-          value={newOverlay.size}
-          onChange={(e) =>
-            setNewOverlay({ ...newOverlay, size: e.target.value })
-          }
-          className="mt-1 block w-full"
-        />
-        <span>{newOverlay.size}%</span>
-      </div>
-      <div className="flex justify-end">
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-          onClick={addLogoOverlay}
-        >
-          Add
-        </button>
-        <button
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-          onClick={() => setIsLogoModalOpen(false)}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
 
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
