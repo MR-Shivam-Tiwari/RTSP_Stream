@@ -5,17 +5,20 @@ import imageCompression from "browser-image-compression";
 function LiveStream() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [isFileValid, setIsFileValid] = useState(false);
+  const [fileError, setFileError] = useState("");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [overlays, setOverlays] = useState([]);
   const [isTextModalOpen, setIsTextModalOpen] = useState(false);
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [fileUploaded, setFileUploaded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newOverlay, setNewOverlay] = useState({
     type: "",
     content: "",
     position: { x: 50, y: 50 },
-    size: 100,
+    size: 30,
   });
   const [editingOverlay, setEditingOverlay] = useState(null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -121,17 +124,20 @@ function LiveStream() {
   const addTextOverlay = async () => {
     if (newOverlay.content) {
       try {
-        const response = await fetch("https://service-portal-backend.vercel.app/api/overlays", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...newOverlay,
-            type: "text",
-            videoUrl: videoUrl,
-          }),
-        });
+        const response = await fetch(
+          "https://service-portal-backend.vercel.app/api/overlays",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...newOverlay,
+              type: "text",
+              videoUrl: videoUrl,
+            }),
+          }
+        );
         const data = await response.json();
         setOverlays([...overlays, data]);
         setNewOverlay({
@@ -150,17 +156,20 @@ function LiveStream() {
   const addLogoOverlay = async () => {
     if (newOverlay.content) {
       try {
-        const response = await fetch("https://service-portal-backend.vercel.app/api/overlays", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...newOverlay,
-            type: "logo",
-            videoUrl: videoUrl,
-          }),
-        });
+        const response = await fetch(
+          "https://service-portal-backend.vercel.app/api/overlays",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...newOverlay,
+              type: "logo",
+              videoUrl: videoUrl,
+            }),
+          }
+        );
         const data = await response.json();
         setOverlays([...overlays, data]);
         setNewOverlay({
@@ -178,9 +187,12 @@ function LiveStream() {
 
   const deleteOverlay = async (id) => {
     try {
-      await fetch(`https://service-portal-backend.vercel.app/api/overlays/${id}`, {
-        method: "DELETE",
-      });
+      await fetch(
+        `https://service-portal-backend.vercel.app/api/overlays/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
       setOverlays(overlays.filter((overlay) => overlay._id !== id));
     } catch (error) {
       console.error("Error deleting overlay:", error);
@@ -222,9 +234,17 @@ function LiveStream() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 100 * 1024) {
+        // 100 KB in bytes
+        setFileError("File size must be less than 100 KB.");
+        return;
+      } else {
+        setFileError(""); // Clear error if file is valid
+      }
+
       try {
         const options = {
-          maxSizeMB: 2,
+          maxSizeMB: 0.1, // Adjust if necessary; 0.1 MB is 100 KB
           maxWidthOrHeight: 1920,
           useWebWorker: true,
         };
@@ -636,8 +656,9 @@ function LiveStream() {
               </label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                className="mt-1 block p-2 w-full h-10 border bg-gray-300 rounded-md"
                 value={newOverlay.content}
+                placeholder="Enter Your Text"
                 onChange={(e) =>
                   setNewOverlay({ ...newOverlay, content: e.target.value })
                 }
@@ -649,10 +670,12 @@ function LiveStream() {
               </label>
               <input
                 type="range"
-                min="50"
-                max="200"
+                min="10" // Minimum size
+                max="100" // Maximum size
                 value={newOverlay.size}
-                onChange={(e) => handleSizeChange(e, true)}
+                onChange={(e) =>
+                  setNewOverlay({ ...newOverlay, size: e.target.value })
+                }
                 className="mt-1 block w-full"
               />
               <span>{newOverlay.size}%</span>
@@ -675,53 +698,59 @@ function LiveStream() {
         </div>
       )}
 
-      {isLogoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">Add Logo Overlay</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Upload Logo
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                className="mt-1 block w-full"
-                onChange={handleFileUpload}
-                ref={fileInputRef}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Size
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="100"
-                value={newOverlay.size}
-                onChange={(e) => handleSizeChange(e, true)}
-                className="mt-1 block w-full"
-              />
-              <span>{newOverlay.size}%</span>
-            </div>
-            <div className="flex justify-end">
-              <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-                onClick={addLogoOverlay}
-              >
-                Add
-              </button>
-              <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-                onClick={() => setIsLogoModalOpen(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+{isLogoModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="bg-white p-6 rounded-lg">
+      <h2 className="text-xl font-bold mb-4">Add Logo Overlay</h2>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Upload Logo
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          className="mt-1 block w-full"
+          onChange={handleFileUpload}
+          ref={fileInputRef}
+        />
+        {fileError && (
+          <p className="text-red-500 text-sm mt-1">{fileError}</p>
+        )}
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Size
+        </label>
+        <input
+          type="range"
+          min="10"  // Minimum size
+          max="100" // Maximum size
+          value={newOverlay.size}
+          onChange={(e) =>
+            setNewOverlay({ ...newOverlay, size: e.target.value })
+          }
+          className="mt-1 block w-full"
+        />
+        <span>{newOverlay.size}%</span>
+      </div>
+      <div className="flex justify-end">
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+          onClick={addLogoOverlay}
+        >
+          Add
+        </button>
+        <button
+          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+          onClick={() => setIsLogoModalOpen(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -734,7 +763,8 @@ function LiveStream() {
               {editingOverlay?.type === "text" ? (
                 <input
                   type="text"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="mt-1 block w-full rounded-md h-10 border p-2 bg-gray-300"
+                  placeholder="Enter Your Text"
                   value={editingOverlay?.content || ""}
                   onChange={(e) =>
                     setEditingOverlay({
@@ -744,24 +774,41 @@ function LiveStream() {
                   }
                 />
               ) : (
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="mt-1 block w-full"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        setEditingOverlay({
-                          ...editingOverlay,
-                          content: e.target.result,
-                        });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="mt-1 block w-full"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setFileUploaded(true); // Mark file as uploaded
+                        if (file.size > 100 * 1024) {
+                          // 100 KB in bytes
+                          setFileError("File size must be less than 100 KB.");
+                          setIsFileValid(false); // Set file as invalid
+                        } else {
+                          setFileError(""); // Clear error if file is valid
+                          setIsFileValid(true); // Set file as valid
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          setEditingOverlay({
+                            ...editingOverlay,
+                            content: e.target.result,
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      } else {
+                        setFileUploaded(false); // No file selected
+                        setIsFileValid(true); // Reset validity
+                      }
+                    }}
+                  />
+                  {fileError && (
+                    <p className="text-red-500 text-sm mt-1">{fileError}</p>
+                  )}
+                </div>
               )}
             </div>
             <div className="mb-4">
@@ -815,8 +862,13 @@ function LiveStream() {
             </div>
             <div className="flex justify-end">
               <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2 ${
+                  !isFileValid && fileUploaded
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
                 onClick={updateOverlay}
+                disabled={!isFileValid && fileUploaded} // Disable if file is uploaded and invalid
               >
                 Update
               </button>
